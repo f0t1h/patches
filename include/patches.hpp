@@ -208,25 +208,39 @@ namespace serialize{ // Make everything range
         }
     };
 };
-template<StringLiteral lit>
+template<StringLiteral lit, StringLiteral... rem>
 struct get_impl_fn{
     template<field_type x, field_type y, field_type... f>
     constexpr auto &operator() (patches<x, y, f...> &tup) const {
+        
         if constexpr(lit == x::name()){
-            return tup.value;
+            if constexpr (sizeof...(rem) == 0){
+                return tup.value;
+            }
+            else{
+                return get_impl_fn<rem...>{}(tup.value);
+            }
         }
         else{
             return operator()(static_cast<patches<y, f...>&>(tup));
         }
+    
+
     }
     template<field_type x>
     constexpr auto &operator() (patches<x> &tup) const {
         if constexpr(lit == x::name()){
-            return tup.value;
+            if constexpr (sizeof...(rem) == 0){
+                return tup.value;
+            }
+            else{
+                return get_impl_fn<rem...>{}(tup.value);
+            }
         }
         else{
             return not_found{};
         }
+    
     }
 };
 template<StringLiteral lit>
