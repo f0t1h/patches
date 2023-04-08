@@ -3,8 +3,9 @@
 int main(){
     using person = ns::patches< 
         ns::field<"Age", int>,
-        ns::field<"Name", string>
+        ns::field<"Name", const char *>
     >;
+ 
     person Y;
     ns::getto<"Age">(Y) = 30;
     ns::getto<"Name">(Y) = "Foti";
@@ -18,11 +19,18 @@ int main(){
         {33, "o"},
         {0, "biz"}
     }};
-    // ns::serialize::tsv printer{Y};
-    
-    // cout << printer.header() << "\n";
-    // cout << printer << "\n";
-    // cout << ns::serialize::tsv{Z};
-    //check_FR<decltype(Y)>{};
+
+    using evlicift = ns::patches<
+        ns::field<"e1", person>,
+        ns::field<"e2", person>
+    >;
+
+    evlicift cif {
+        {30,"merve"},
+        {32,"mahmut"}
+    };
+    ns::getto<"e1","Age"> (cif) +=25;
+    cout << ns::serialize::tsv(ns::getto<"e2">(cif)) <<"\n";
+
     return ns::getto<"Age">(Y) + ns::getto<"Age">(Z);
 }
