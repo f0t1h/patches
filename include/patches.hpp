@@ -243,6 +243,6 @@ struct get_impl_fn{
     
     }
 };
-template<StringLiteral lit>
-constexpr get_impl_fn<lit> getto;
+template<StringLiteral... lit>
+constexpr get_impl_fn<lit...> getto;
 }
