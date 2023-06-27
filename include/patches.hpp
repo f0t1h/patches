@@ -10,7 +10,7 @@
 #include <array>
 
 using namespace std;
-namespace ns{
+namespace nt{
 template<size_t N>
 struct StringLiteral {
     constexpr StringLiteral(const char (&str)[N]) {
@@ -43,6 +43,12 @@ class field{
     }
     operator C() const{
         return value;
+    }
+    operator C&() {
+        return value;
+    }
+    void operator=(const C &c){
+        value = c;
     }
 };
 
@@ -181,7 +187,7 @@ namespace serialize{ // Make everything range
         friend ostream& operator << (ostream &ost, const json<f, fields...> &p){
             ost << p.patch.value;
             if constexpr (sizeof...(fields) > 0){
-                ns::run(static_cast<patches<fields...>>(p.patch), [&ost](const auto &q){
+                ntrun(static_cast<patches<fields...>>(p.patch), [&ost](const auto &q){
                     ost << "\t" <<  q;
                 });
             }
@@ -201,7 +207,7 @@ namespace serialize{ // Make everything range
         friend ostream& operator << (ostream &ost, const tsv<f, fields...> &p){
             ost << p.patch.value;
             if constexpr (sizeof...(fields) > 0){
-                ns::run(static_cast<patches<fields...>>(p.patch), [&ost](const auto &q){
+                ntrun(static_cast<patches<fields...>>(p.patch), [&ost](const auto &q){
                     ost << "\t" <<  q.value;
                 });
             }
