@@ -33,8 +33,16 @@ template<StringLiteral lit, class C>
 class field{
     public:
     using type = C;
+    C value;
+
     constexpr static auto name() {
         return lit;
+    }
+    constexpr bool operator == (const auto &other) const {
+        return name() == other.name() && typeid(type) == typeid(other.type);
+    }
+    operator C() const{
+        return value;
     }
 };
 
@@ -109,6 +117,9 @@ class patches : public patches<F...>{
     patches() : value{} {};
     patches(const type &c, const F::type& ...f):
         patches<F...>{f...} , value{c} {}
+    operator C () const{
+        return C{value};
+    }
 };
 
 template<field_type C>
@@ -121,7 +132,11 @@ class patches<C>{
     constexpr static auto name() {
         return C::name();
     }
+    operator C () const{
+        return C{value};
+    }
 };
+
 
 template<field_type C, field_type  ...F>
 auto run(const patches<C,F...> &p, auto func){
@@ -246,3 +261,4 @@ struct get_impl_fn{
 template<StringLiteral... lit>
 constexpr get_impl_fn<lit...> getto;
 }
+
