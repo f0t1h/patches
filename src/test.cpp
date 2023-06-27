@@ -1,20 +1,20 @@
 #include <patches.hpp>
 
 int main(){
- using pers = ns::patches <
-        ns::field<"name", string>,
-        ns::field<"age", int>
+ using pers = nt::patches <
+        nt::field<"name", string>,
+        nt::field<"age", int>
         >;
     
-    using location = ns::patches <
-        ns::field<"country", string>,
-        ns::field<"province", string>
+    using location = nt::patches <
+        nt::field<"country", string>,
+        nt::field<"province", string>
     >;
 
-    using wine = ns::patches <
-        ns::field<"name", string>,
-        ns::field<"age", int>,
-        ns::field<"location", location>
+    using wine = nt::patches <
+        nt::field<"name", string>,
+        nt::field<"age", int>,
+        nt::field<"location", location>
     >;
 
     pers fatih {"fatih",42};
@@ -25,19 +25,19 @@ int main(){
         {"France", "Champagne"}
     };
 
-    auto print_name = [] (const ns::field<"name",string> &f){
+    auto print_name = [] (contt nt::field<"name",string> &f){
         cout << f.name() << ":" << f.value;
     };
-    auto print_age = [] (const ns::field<"age",int> &f){
+    auto print_age = [] (contt nt::field<"age",int> &f){
         cout << f.name() << ":" << f.value;
     };
-    auto print_country = [] (const ns::field<"country", string> &f){
+    auto print_country = [] (contt nt::field<"country", string> &f){
         cout << f.name() << ":" << f.value;
     };
-    auto print_province = [] (const ns::field<"province", string> &f){
+    auto print_province = [] (contt nt::field<"province", string> &f){
         cout << f.name() << ":" << f.value;
     };
-    auto print_location = [&] (const ns::field<"location", location> &f){
+    auto print_location = [&] (contt nt::field<"location", location> &f){
         cout << f.name() << ":(";
         print_country(f.value);
         cout << ", ";
@@ -58,11 +58,11 @@ int main(){
     cout << "\n";
     print_location(w1);
 
-    using fam = ns::patches<
-        ns::field<"p1", pers>,
-        ns::field<"p2", pers>,
-        ns::field<"p3", pers>,
-        ns::field<"p4", pers>
+    using fam = nt::patches<
+        nt::field<"p1", pers>,
+        nt::field<"p2", pers>,
+        nt::field<"p3", pers>,
+        nt::field<"p4", pers>
     >;
 
     fam nice {
@@ -71,7 +71,7 @@ int main(){
         {"C",22},
         {"D",23},
     };
-    ns::getto<"p3","age">(nice)+=10;
+    nt::getto<"p3","age">(nice)+=10;
 
     nt::field<"me", int> q{0};
 
@@ -90,5 +90,5 @@ int main(){
         >;
 
     cout << sizeof(qq{}) << "\t" << sizeof(pers{});
-    return ns::getto<"p3","age">(nice);    
+    return nt::getto<"p3","age">(nice);    
 }
