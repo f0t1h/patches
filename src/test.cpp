@@ -72,4 +72,23 @@ int main(){
         {"D",23},
     };
     ns::getto<"p3","age">(nice)+=10;
+
+    nt::field<"me", int> q{0};
+
+    q ++;
+    ++ q;
+ 
+    
+    cout << q << "\n";
+    q = 5;
+    cout << q << "\n";
+    cout << typeid(q).name() << "\n";
+
+    using qq = tuple<
+        nt::field<"A",int>,
+        nt::field<"B",string>
+        >;
+
+    cout << sizeof(qq{}) << "\t" << sizeof(pers{});
     return ns::getto<"p3","age">(nice);    
+}
