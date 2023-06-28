@@ -90,5 +90,18 @@ int main(){
         >;
 
     cout << sizeof(qq{}) << "\t" << sizeof(pers{});
+
+
+
+    auto l1 = [](nt::field<"B",int> A){};
+    auto l2 = [](nt::field<"B",string> A) {};
+    using qv = nt::patches <
+        nt::field<"B",int>,
+        nt::field<"B",string>
+    >;
+    l1(qv{});
+    l2(qv{});
+
+
     return nt::getto<"p3","age">(nice);    
 }
