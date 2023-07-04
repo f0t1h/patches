@@ -25,19 +25,19 @@ int main(){
         {"France", "Champagne"}
     };
 
-    auto print_name = [] (contt nt::field<"name",string> &f){
+    auto print_name = [] (const nt::field<"name",string> &f){
         cout << f.name() << ":" << f.value;
     };
-    auto print_age = [] (contt nt::field<"age",int> &f){
+    auto print_age = [] (const nt::field<"age",int> &f){
         cout << f.name() << ":" << f.value;
     };
-    auto print_country = [] (contt nt::field<"country", string> &f){
+    auto print_country = [] (const nt::field<"country", string> &f){
         cout << f.name() << ":" << f.value;
     };
-    auto print_province = [] (contt nt::field<"province", string> &f){
+    auto print_province = [] (const nt::field<"province", string> &f){
         cout << f.name() << ":" << f.value;
     };
-    auto print_location = [&] (contt nt::field<"location", location> &f){
+    auto print_location = [&] (const nt::field<"location", location> &f){
         cout << f.name() << ":(";
         print_country(f.value);
         cout << ", ";
