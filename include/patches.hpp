@@ -10,6 +10,45 @@
 #include <array>
 
 using namespace std;
+
+
+//Big Concepts
+
+
+#define _NTF(NAME_STRING, TYPE) nt::field<NAME_STRING, TYPE>
+#define NTF(NAME, TYPE) _NTF(#NAME, TYPE)
+
+template<class K, class A>
+concept has_field_1 = requires (K k){
+    k.operator A();
+};
+template<class K, class A, class B>
+concept has_field_2 = requires (K k){
+    k.operator A();
+} && has_field_1<K, B>;
+
+template<class K, class A, class B, class C>
+concept has_field_3 = requires (K k){
+    k.operator A();
+} && has_field_2<K, B, C>;
+template<class K, class A, class B, class C, class D>
+concept has_field_4 = requires (K k){
+    k.operator A();
+} && has_field_3<K, B, C, D>;
+template<class K, class A, class B, class C, class D, class E>
+concept has_field_5 = requires (K k){
+    k.operator A();
+} && has_field_4<K, B, C, D ,E>;
+
+#define VA_NARGS_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+#define VA_NARGS(...) VA_NARGS_IMPL(__VA_ARGS__, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1)
+#define __con_impl2(n, ...)  n ## _ ## __VA_ARGS__
+#define __con_impl(n, ...) __con_impl2(n, __VA_ARGS__)
+#define HAS_FIELDS(...) \
+ __con_impl(has_field,VA_NARGS(__VA_ARGS__))<__VA_ARGS__>
+
+//END
+
 namespace nt{
 template<size_t N>
 struct StringLiteral {
@@ -50,6 +89,10 @@ class field{
     void operator=(const C &c){
         value = c;
     }
+    void operator=(const field<lit, C> &other) = delete;
+    field(const field<lit, C> &other) = delete;
+    field(const C&c) : value{c} {}
+    field(){}
 };
 
 
@@ -124,7 +167,13 @@ class patches : public patches<F...>{
     patches(const type &c, const F::type& ...f):
         patches<F...>{f...} , value{c} {}
     operator C () const{
-        return C{value};
+        return {value};
+    }
+    operator typename C::type () const {
+        return value;
+    }
+    constexpr auto next() const -> patches<F...>{
+        return *this;
     }
 };
 
@@ -141,6 +190,9 @@ class patches<C>{
     operator C () const{
         return C{value};
     }
+    operator typename C::type () const {
+        return value;
+    }
 };
 
 
@@ -156,12 +208,12 @@ auto run(const patches<C,F...> &p, auto func){
 
 
 template<field_type f, field_type ...F>
-constexpr auto end( const patches<f, F...> &p){
+constexpr auto end( const patches<f, F...> &){
     return  not_found{};
 }
 
 
-constexpr bool operator==(not_found ff, not_found nf){
+constexpr bool operator==(not_found , not_found ){
     return true;
 }
 
@@ -187,7 +239,7 @@ namespace serialize{ // Make everything range
         friend ostream& operator << (ostream &ost, const json<f, fields...> &p){
             ost << p.patch.value;
             if constexpr (sizeof...(fields) > 0){
-                ntrun(static_cast<patches<fields...>>(p.patch), [&ost](const auto &q){
+                nt::run(static_cast<patches<fields...>>(p.patch), [&ost](const auto &q){
                     ost << "\t" <<  q;
                 });
             }
@@ -207,7 +259,7 @@ namespace serialize{ // Make everything range
         friend ostream& operator << (ostream &ost, const tsv<f, fields...> &p){
             ost << p.patch.value;
             if constexpr (sizeof...(fields) > 0){
-                ntrun(static_cast<patches<fields...>>(p.patch), [&ost](const auto &q){
+                nt::run(static_cast<patches<fields...>>(p.patch), [&ost](const auto &q){
                     ost << "\t" <<  q.value;
                 });
             }
@@ -217,7 +269,7 @@ namespace serialize{ // Make everything range
         class _header{
             public:
             _header() {}
-            friend ostream& operator << (ostream &ost, const tsv<f, fields...>::_header &p){
+            friend ostream& operator << (ostream &ost, const tsv<f, fields...>::_header &){
                 ost << f::name();
                 (ost << ... << ("\t"s + string{ fields::name().value}));
                 return ost;
