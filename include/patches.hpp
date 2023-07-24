@@ -1,64 +1,122 @@
-#include <cassert>
 #include <iostream>
-#include <string>
-#include <vector>
-#include <ranges>
-#include<algorithm>
-#include <execution>
-#include<vector>
 #include <string_view>
+#include <string>
+#include <algorithm>
+#include <utility>
+
+#include <iomanip>
 #include <array>
+#include <vector>
+#include <sstream>
+#include <functional>
+#include <concepts>
+#include <map>
+
+#define FMT_CONSTEXPR constexpr
+#include <fmt/core.h>
+#include <fmt/ranges.h>
+#include <fmt/compile.h>
+#include <fmt/format.h>
+
+
 
 using namespace std;
-
-
-//Big Concepts
-
-
-#define _NTF(NAME_STRING, TYPE) nt::field<NAME_STRING, TYPE>
-#define NTF(NAME, TYPE) _NTF(#NAME, TYPE)
-
-template<class K, class A>
-concept has_field_1 = requires (K k){
-    k.operator A();
-};
-template<class K, class A, class B>
-concept has_field_2 = requires (K k){
-    k.operator A();
-} && has_field_1<K, B>;
-
-template<class K, class A, class B, class C>
-concept has_field_3 = requires (K k){
-    k.operator A();
-} && has_field_2<K, B, C>;
-template<class K, class A, class B, class C, class D>
-concept has_field_4 = requires (K k){
-    k.operator A();
-} && has_field_3<K, B, C, D>;
-template<class K, class A, class B, class C, class D, class E>
-concept has_field_5 = requires (K k){
-    k.operator A();
-} && has_field_4<K, B, C, D ,E>;
-
-#define VA_NARGS_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
-#define VA_NARGS(...) VA_NARGS_IMPL(__VA_ARGS__, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1)
-#define __con_impl2(n, ...)  n ## _ ## __VA_ARGS__
-#define __con_impl(n, ...) __con_impl2(n, __VA_ARGS__)
-#define HAS_FIELDS(...) \
- __con_impl(has_field,VA_NARGS(__VA_ARGS__))<__VA_ARGS__>
-
-//END
-
 namespace nt{
+namespace detail{
+template<size_t N>
+using string_literal_type = const char (&)[N];
+template<char... C>
+struct char_pack{};
+
+template<size_t N>
+struct size_const{
+    static constexpr size_t val = N;
+};
+template<class K>
+concept has_val = requires {
+    (size_t)K::val;
+};
 template<size_t N>
 struct StringLiteral {
+    static constexpr size_t size(){
+        return N;
+    }
     constexpr StringLiteral(const char (&str)[N]) {
         std::copy_n(str, N, value);
     }
+    // template<size_t I, size_t J>
+    // constexpr StringLiteral(const char (&str)[I], const char(&str2)[J]) {
+    //     std::copy_n(str, I, value);
+    //     std::copy_n(str2, J, value + I - 1);
+    //     if constexpr( I + J - 1 < N){
+    //         for(size_t i = I + J - 1; i < N;i++){
+    //             value[i] = 0;
+    //         }
+    //     }
+    // }
+    // template<size_t I, size_t J>
+    // constexpr StringLiteral(const StringLiteral<I> &s1,const StringLiteral<J> &s2) {
+    //     std::copy_n(s1.value, I, value);
+    //     std::copy_n(s2.value, J, value + I - 1);
+    //     if constexpr( I + J - 1 < N){
+    //         for(size_t i = I + J - 1; i < N;i++){
+    //             value[i] = 0;
+    //         }
+    //     }
+    // }
+    // template<size_t F>
+    // constexpr StringLiteral(has_val auto k, const StringLiteral<F> &fs){
+    //     std::copy_n(fs.value, F, value + decltype(k)::val - 1);
+    //     if constexpr( decltype(k)::val + F - 1 < N){
+    //         for(size_t i = decltype(k)::val + F - 1; i < N;i++){
+    //             value[i] = 0;
+    //         }
+    //     }
+    // }
+    // template< size_t F, size_t...I>
+    // constexpr StringLiteral( has_val auto k, const StringLiteral<F> &fs, const StringLiteral<I> &...s)
+    // :   StringLiteral (size_const<decltype(k)::val + F - 1>{}, s...){
+        
+    //     std::copy_n(fs.value, F - 1, value + decltype(k)::val - 1);
+    // }
+    // template<size_t F, size_t...I>
+    // constexpr StringLiteral(const StringLiteral<F> &fs, const StringLiteral<I> &...s)
+    // :   StringLiteral(size_const<1>{},fs, s...){
+     
+    // }
+    template<size_t...J>
+    constexpr StringLiteral (StringLiteral<J>... q) {
+        auto v = std::begin(value);
+        ((v = std::copy_n(q.value,J-1,v)), ...);
+        
+        while(v < value + N){
+            *v = 0;
+            ++v;
+        }
+    }
+    template<char ...C>
+    constexpr StringLiteral(char_pack<C...>) : value{C...}{
+    }
+    
     char value[N];
     friend ostream& operator<<(ostream &ost, const StringLiteral<N> &st){
         ost << st.value;
         return ost;
+    }
+};
+template<size_t...N>
+constexpr auto literal_cat(const StringLiteral<N>... t){
+    return StringLiteral<((N) + ...)>{t...};
+}
+
+template<StringLiteral L>
+struct string_constant{
+    static constexpr auto value = L;
+};
+template<string_constant...C>
+struct sc_pack{
+    static constexpr auto to_string() -> array<string, sizeof...(C)> {
+        return {{C.value.value...}};
     }
 };
 
@@ -68,255 +126,158 @@ constexpr bool operator==(const StringLiteral<N> &s1,
         return string_view(s1.value) == string_view(s2.value);
 }
 
-template<StringLiteral lit, class C>
-class field{
-    public:
-    using type = C;
-    C value;
 
-    constexpr static auto name() {
-        return lit;
+template<char N, char... rest>
+void print_n(){
+    cout << N << "_";
+    if constexpr(sizeof...(rest) > 0){
+        print_n<rest...>();
     }
-    constexpr bool operator == (const auto &other) const {
-        return name() == other.name() && typeid(type) == typeid(other.type);
-    }
-    operator C() const{
+}
+
+}
+template<detail::StringLiteral N, class I>
+struct field {
+    using type = I;
+    type value;
+    static constexpr auto name = N;
+    constexpr field(const type &t) : value{t} {}
+    constexpr field() {}
+    constexpr auto &operator[](detail::string_constant<N>){
         return value;
     }
-    operator C&() {
+    constexpr auto operator[](detail::string_constant<N>) const{
         return value;
     }
-    void operator=(const C &c){
-        value = c;
-    }
-    void operator=(const field<lit, C> &other) = delete;
-    field(const field<lit, C> &other) = delete;
-    field(const C&c) : value{c} {}
-    field(){}
 };
-
-
 template<class K>
-concept has_type =
-requires (){
+concept leaf_type =
+requires {
     typename K::type;
+} && 
+requires (K k) {
+    k.value;
+} &&
+requires {
+    K::name;
 };
+namespace serialize2{
+template<leaf_type F, leaf_type ...M>
+struct json_obj;
+}
+
+template<leaf_type ...M>
+struct patches: public M...{
+    using M::operator[]...;
+    using names = detail::sc_pack<detail::string_constant<M::name>{}...>;
+    constexpr operator std::tuple<typename M::type...> ()  {
+        return  {operator[](detail::string_constant<M::name>{})...};
+    }
+    constexpr auto named_pairs ()  -> std::tuple<std::pair<decltype(M::name),typename M::type>...> {
+        return  {std::pair{M::name,operator[](detail::string_constant<M::name>{})}...};
+    }
+    constexpr auto cnamed_pairs ()  const -> std::tuple<std::pair<decltype(M::name),typename M::type>...>  {
+        return  {std::pair{M::name,operator[](detail::string_constant<M::name>{})}...};
+    }    constexpr auto tuple () ->  std::tuple<typename M::type...>  {
+        return  std::tuple<typename M::type...> {*this};
+    }
+    using json = serialize2::json_obj<M...>;    
+};
+template<detail::StringLiteral index>
+struct getter{
+    auto &operator ()(auto &patch){
+        return patch[detail::string_constant<index>{}];
+    }
+};
+namespace literals{
+template<class T, T...t>
+constexpr auto operator ""_get() {
+    return getter<detail::StringLiteral<sizeof...(t)+1>{detail::char_pack<t...>{}}>{};
+}
+template<class T, T...t>
+constexpr auto operator ""_sc() {
+    return detail::string_constant<detail::StringLiteral<sizeof...(t)+1>{detail::char_pack<t...>{}}>{};
+}
+template<class T, T...t>
+constexpr auto operator ""_lit() {
+    return detail::StringLiteral<sizeof...(t)+1>{detail::char_pack<t...>{}};
+}
+}
+
+template<class Projection, int depth = 0, detail::StringLiteral sep="\t">
+struct printer{
+    Projection wrapper;
+    template<class first>
+    void operator()(auto &stream, const first &f) const{
+        for(int i = 0; i < depth; ++i){
+            stream << "\t";
+        }
+        stream << wrapper(f);
+    }
+    template<class first, class...N>
+    void operator()(auto &stream, const first &f, const N&...n) const{
+        for(int i = 0; i < depth; ++i){
+            stream << "\t";
+        }
+        stream << wrapper(f) << sep;
+        operator()(stream, n...);
+    }
+};
+
+namespace serialize2{
+// template<class... F>
+// class json_obj{
+// };
+    using namespace nt::literals;
+template<class T>
+concept StringLike = std::is_convertible_v<T, std::string_view>;
+template<class T>
+concept leaf_type_with_stringlike_type =
+    nt::leaf_type<T> && StringLike<typename T::type>;
 
 template<class K>
-concept has_name =
-requires (K k){
-    k.name();
+struct get_quot{
+    static constexpr nt::detail::StringLiteral<3> value{"{}"};
+};
+template<leaf_type_with_stringlike_type K>
+struct get_quot<K>{
+    static constexpr nt::detail::StringLiteral<5> value{"\"{}\""};
+};
+template<leaf_type F, leaf_type ...T>
+struct json_obj_helper{
+    static constexpr auto val = 
+        nt::detail::literal_cat("\t\""_lit, F::name, "\": "_lit, get_quot<F>::value ,",\n"_lit, json_obj_helper<T...>::val);
 };
 
-template<class K>
-concept has_value =
-requires (K k){
-    k.value();
+
+template<leaf_type F>
+struct json_obj_helper<F>{
+    static constexpr auto val = 
+        nt::detail::literal_cat("\t\""_lit, F::name, "\": "_lit, get_quot<F>::value ,"\n"_lit);
 };
-template<class K>
-concept streamoutable =
-requires(ostream &o, K k){
-    o << k;
+template<leaf_type F, leaf_type ...T>
+struct json_obj{
+    static constexpr auto val =
+      nt::detail::literal_cat("{{\n"_lit, json_obj_helper<F,T...>::val, "\n}}"_lit);
 };
 
-class not_found{
-};
-
-bool operator ==(const not_found &,const not_found &){
-    return true;
-}
-bool operator ==(const auto &, const not_found &){
-    return false;
-}
-bool operator ==(const not_found &, const auto &){
-    return false;
 }
 
-
-
-
-template<class K>
-concept empty_constructable = requires(){
-    K{};
+template<class K, nt::detail::string_constant... sc> // Type check?
+concept has_field  = requires(K k){
+    (k[sc] , ...);
 };
+}
 
-template<class K>
-concept has_empty_constructable_type = has_type<K> && empty_constructable<typename K::type>;
+template <nt::leaf_type...L> 
+struct fmt::formatter<nt::patches<L...>> : formatter<string_view> {
+  // parse is inherited from formatter<string_view>.
 
-template<class K>
-concept field_type = 
-    has_empty_constructable_type<K> &&
-    has_name<K>;
-
-template<class K>
-concept serializable_field = 
-    field_type<K> &&
-    streamoutable<typename K::type>;
-
-
-// template<class K>
-// concept patch_type = has_fields<K>;
-
-
-template<field_type C, field_type  ...F>
-class patches : public patches<F...>{
-    public:
-    using type = C::type;
-    type value;
-    patches() : value{} {};
-    patches(const type &c, const F::type& ...f):
-        patches<F...>{f...} , value{c} {}
-    operator C () const{
-        return {value};
-    }
-    operator typename C::type () const {
-        return value;
-    }
-    constexpr auto next() const -> patches<F...>{
-        return *this;
+    auto format(const nt::patches<L...>& c, format_context& ctx) const{
+        return fmt::format_to(ctx.out(), 
+        FMT_COMPILE(nt::patches<L...>::json::val.value),
+        c[nt::detail::string_constant<L::name>{}]...);
     }
 };
 
-template<field_type C>
-class patches<C>{
-    public:
-    using type = C::type;
-    type value;
-    patches() : value{} {};
-    patches(const type &c) : value{c} {}
-    constexpr static auto name() {
-        return C::name();
-    }
-    operator C () const{
-        return C{value};
-    }
-    operator typename C::type () const {
-        return value;
-    }
-};
-
-
-template<field_type C, field_type  ...F>
-auto run(const patches<C,F...> &p, auto func){
-    func(p);
-    if constexpr(sizeof...(F) > 0){
-        run(static_cast<patches<F...>>(p),func);
-    }
-}
-
-
-
-
-template<field_type f, field_type ...F>
-constexpr auto end( const patches<f, F...> &){
-    return  not_found{};
-}
-
-
-constexpr bool operator==(not_found , not_found ){
-    return true;
-}
-
-
-template<field_type f, field_type ...F>
-constexpr auto operator*( const patches<f, F...> &p){
-    return make_pair(f::name(), p.value);
-}
-
-
-
-
-namespace serialize{ // Make everything range
-    template<serializable_field f, serializable_field...fields>
-    struct json{ //TODO
-        using patch_type = patches<f,fields...>;
-        const patch_type &patch;
-        const string_view sep;
-        constexpr json(const patch_type &p, const string_view sep = "\t") : patch{p}, sep{sep}{
-        
-        }
-
-        friend ostream& operator << (ostream &ost, const json<f, fields...> &p){
-            ost << p.patch.value;
-            if constexpr (sizeof...(fields) > 0){
-                nt::run(static_cast<patches<fields...>>(p.patch), [&ost](const auto &q){
-                    ost << "\t" <<  q;
-                });
-            }
-            return ost;
-        }
-    };
-
-    template<serializable_field f, serializable_field...fields>
-    struct tsv{
-        using patch_type = patches<f,fields...>;
-        const patch_type &patch;
-        const string_view sep;
-        constexpr tsv(const patch_type &p, const string_view sep = "\t") : patch{p}, sep{sep}{
-        
-        }
-
-        friend ostream& operator << (ostream &ost, const tsv<f, fields...> &p){
-            ost << p.patch.value;
-            if constexpr (sizeof...(fields) > 0){
-                nt::run(static_cast<patches<fields...>>(p.patch), [&ost](const auto &q){
-                    ost << "\t" <<  q.value;
-                });
-            }
-            return ost;
-        }
-
-        class _header{
-            public:
-            _header() {}
-            friend ostream& operator << (ostream &ost, const tsv<f, fields...>::_header &){
-                ost << f::name();
-                (ost << ... << ("\t"s + string{ fields::name().value}));
-                return ost;
-            }
-        };
-
-        static auto header(){
-            return _header{};
-        }
-    };
-};
-template<StringLiteral lit, StringLiteral... rem>
-struct get_impl_fn{
-    template<field_type x, field_type y, field_type... f>
-    constexpr auto &operator() (patches<x, y, f...> &tup) const {
-        
-        if constexpr(lit == x::name()){
-            if constexpr (sizeof...(rem) == 0){
-                return tup.value;
-            }
-            else{
-                return get_impl_fn<rem...>{}(tup.value);
-            }
-        }
-        else{
-            return operator()(static_cast<patches<y, f...>&>(tup));
-        }
-    
-
-    }
-    template<field_type x>
-    constexpr auto &operator() (patches<x> &tup) const {
-        if constexpr(lit == x::name()){
-            if constexpr (sizeof...(rem) == 0){
-                return tup.value;
-            }
-            else{
-                return get_impl_fn<rem...>{}(tup.value);
-            }
-        }
-        else{
-            return not_found{};
-        }
-    
-    }
-};
-template<StringLiteral... lit>
-constexpr get_impl_fn<lit...> getto;
-}
 
