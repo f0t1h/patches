@@ -4,8 +4,15 @@
 using namespace nt::literals;
 
 
-auto restricted_func (nt::has_field<"Name"_sc, "Age"_sc> auto var) {
-    //cout << var["Name"_sc] << "\t" << var["Age"_sc] << "\n";
+
+auto restricted_name_func (nt::has_field_name<"Name"_sc, "Age"_sc> auto var) {
+
+    return var;
+}
+auto restricted_func (nt::has_field<
+        nt::field<"Name", const char*>,
+        nt::field<"Age", int>
+        > auto var){
     return var;
 }
 

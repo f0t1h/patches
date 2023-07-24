@@ -263,10 +263,18 @@ struct json_obj{
 
 }
 
-template<class K, nt::detail::string_constant... sc> // Type check?
-concept has_field  = requires(K k){
+template<class K, nt::detail::string_constant... sc>
+concept has_field_name  = requires(K k){
     (k[sc] , ...);
 };
+template<class K, nt::detail::string_constant name, class type>
+concept has_field_single  = requires(K k){
+    {k[name]} -> convertible_to<type>;
+ };
+template<class K, class ...F> 
+concept has_field =
+    (has_field_single<K,nt::detail::string_constant<F::name>{}, typename F::type> && ...);
+
 }
 
 template <nt::leaf_type...L> 
