@@ -4,12 +4,7 @@
 using namespace nt::literals;
 
 
-template<class K, nt::detail::string_constant... sc> // Type check?
-concept has_field  = requires(K k){
-    (k[sc] , ...);
- };
-
-auto restricted_func (has_field<"Name"_sc, "Age"_sc> auto var) {
+auto restricted_func (nt::has_field<"Name"_sc, "Age"_sc> auto var) {
     //cout << var["Name"_sc] << "\t" << var["Age"_sc] << "\n";
     return var;
 }
