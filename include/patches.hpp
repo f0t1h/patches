@@ -246,19 +246,19 @@ struct get_quot<K>{
 template<leaf_type F, leaf_type ...T>
 struct json_obj_helper{
     static constexpr auto val = 
-        nt::detail::literal_cat("\t\""_lit, F::name, "\": "_lit, get_quot<F>::value ,",\n"_lit, json_obj_helper<T...>::val);
+        nt::detail::literal_cat("\""_lit, F::name, "\":"_lit, get_quot<F>::value, ","_lit, json_obj_helper<T...>::val);
 };
 
 
 template<leaf_type F>
 struct json_obj_helper<F>{
     static constexpr auto val = 
-        nt::detail::literal_cat("\t\""_lit, F::name, "\": "_lit, get_quot<F>::value ,"\n"_lit);
+        nt::detail::literal_cat("\""_lit, F::name, "\":"_lit, get_quot<F>::value);
 };
 template<leaf_type F, leaf_type ...T>
 struct json_obj{
     static constexpr auto val =
-      nt::detail::literal_cat("{{\n"_lit, json_obj_helper<F,T...>::val, "\n}}"_lit);
+      nt::detail::literal_cat("{{"_lit, json_obj_helper<F,T...>::val, "}}"_lit);
 };
 
 }
