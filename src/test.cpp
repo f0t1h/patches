@@ -49,5 +49,9 @@ int main(){
     fmt::print("{}\n", p);
     fmt::print("{}\n", c);
     fmt::print("{}\n", people);
+
+    using person2 = person::rename<"Age"_sc, "Year"_sc>;
+    person2 p2 {"EEE", 1990};
+    fmt::print("{}\n", p2);
 }
 
