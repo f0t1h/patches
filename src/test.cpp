@@ -53,5 +53,7 @@ int main(){
     using person2 = person::rename<"Age"_sc, "Year"_sc>;
     person2 p2 {"EEE", 1990};
     fmt::print("{}\n", p2);
+    person2 p3 { p.tuple()};
+    fmt::print("{}\n",p3);
 }
 
