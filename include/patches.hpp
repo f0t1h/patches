@@ -112,6 +112,9 @@ constexpr auto literal_cat(const StringLiteral<N>... t){
 template<StringLiteral L>
 struct string_constant{
     static constexpr auto value = L;
+    constexpr bool operator == (const auto &other_constant) {
+        return value == other_constant.value;
+    }
 };
 template<string_constant...C>
 struct sc_pack{
@@ -161,6 +164,17 @@ requires (K k) {
 requires {
     K::name;
 };
+
+template<leaf_type F, detail::string_constant old, detail::string_constant rep, class Enable=void>
+struct rename_if {
+    using type = F;
+};
+template<leaf_type F, detail::string_constant old, detail::string_constant rep>
+struct rename_if <F,old,rep, typename std::enable_if<detail::string_constant<F::name>{}==old>::type>{
+    using type = field<rep.value, typename F::type>;
+};
+
+
 namespace serialize2{
 template<leaf_type F, leaf_type ...M>
 struct json_obj;
@@ -182,6 +196,9 @@ struct patches: public M...{
         return  std::tuple<typename M::type...> {*this};
     }
     using json = serialize2::json_obj<M...>;    
+
+    template<detail::string_constant old, detail::string_constant rep>
+    using rename = patches<typename rename_if<M,old,rep>::type...>; 
 };
 template<detail::StringLiteral index>
 struct getter{
