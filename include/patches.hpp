@@ -184,6 +184,11 @@ template<leaf_type ...M>
 struct patches: public M...{
     using M::operator[]...;
     using names = detail::sc_pack<detail::string_constant<M::name>{}...>;
+ 
+    template<size_t ... Is>
+    patches(const tuple<typename M::type...>& t, std::index_sequence<Is...>) : M{get<Is>(t)}... {}
+    patches(const tuple<typename M::type...>& t) : patches<M...>{t, std::make_index_sequence<sizeof...(M)>{}} {}
+
     constexpr operator std::tuple<typename M::type...> ()  {
         return  {operator[](detail::string_constant<M::name>{})...};
     }
